@@ -1,7 +1,7 @@
 base   color
 author Harald Hanche-Olsen
 email  harald.hanche-olsen@ntnu.no
-date   2022-09-15
+date   2022-10-16
 name   color syntax plugin
 desc   Write colored text in DokuWiki.
 url    https://www.dokuwiki.org/plugin:color
