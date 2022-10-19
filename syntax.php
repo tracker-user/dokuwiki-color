@@ -28,7 +28,12 @@ class syntax_plugin_color extends DokuWiki_Syntax_Plugin {
     function handle($match, $state, $pos, Doku_Handler $handler){
         switch ($state) {
           case DOKU_LEXER_ENTER :
-              $m = explode('/', substr($match, 6, -1));
+              $str = substr($match, 6, -1);
+              if (false === strpbrk($str,':')){
+                 $m = explode('/', $str);
+              } else {
+                 $m = explode(':', $str);
+              }
               $color = $this->_specToCSS('color', $m[0]);
               $background = $this->_specToCSS('background-color',
                                               isset($m[1]) ? $m[1] : null);
@@ -93,8 +98,9 @@ class syntax_plugin_color extends DokuWiki_Syntax_Plugin {
   
     // Build a CSS attribute:value pair.
     function _specToCSS($attrib, $c) {
+        $c = trim($c);
         return ((!empty($c) &&
-                 $this->_isValid($c)) ? $attrib.':'.trim($c).';'
+                 $this->_isValid($c)) ? $attrib.':'.$c.';'
                                       : null);
     }
 
