@@ -9,15 +9,6 @@
  *
  * Local fork of https://github.com/hanche/dokuwiki_color_plugin
  *
- * Local modifications vs. upstream (2022-10-19):
- *   1. Added `public` visibility modifiers on every method (PSR-2/PSR-12).
- *   2. Removed the trailing `?>` closing tag (PSR-12).
- *   3. Standardised on `[]` short array syntax throughout.
- *   4. plugin.info.txt date set to 2077-10-19 so the Extension Manager never
- *      offers an Update — see README.md for the rationale.
- *
- * No functional changes. Same parsing, same output.
- *
  * @license GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author  Christopher Smith <chris@jalakai.co.uk> (original)
  * @author  Harald Hanche-Olsen <harald.hanche-olsen@ntnu.no> (current upstream maintainer)
@@ -25,35 +16,55 @@
 
 if (!defined('DOKU_INC')) die();
 
-class syntax_plugin_color extends DokuWiki_Syntax_Plugin
+use dokuwiki\Extension\SyntaxPlugin;
+
+class syntax_plugin_color extends SyntaxPlugin
 {
-    public function getType()
+    /**
+     * @return string Syntax type
+     */
+    public function getType(): string
     {
         return 'formatting';
     }
 
-    public function getAllowedTypes()
+    /**
+     * @return string[] Allowed child syntax types
+     */
+    public function getAllowedTypes(): array
     {
         return ['formatting', 'substition', 'disabled'];
     }
 
-    public function getSort()
+    /**
+     * @return int Parser sort order
+     */
+    public function getSort(): int
     {
         return 158;
     }
 
-    public function connectTo($mode)
+    /**
+     * @param string $mode Current parser mode
+     */
+    public function connectTo($mode): void
     {
         $this->Lexer->addEntryPattern('<color.*?>(?=.*?</color>)', $mode, 'plugin_color');
     }
 
-    public function postConnect()
+    public function postConnect(): void
     {
         $this->Lexer->addExitPattern('</color>', 'plugin_color');
     }
 
     /**
-     * Handle the match
+     * Parse a matched token into structured data.
+     *
+     * @param string       $match   The matched text
+     * @param int          $state   Lexer state (DOKU_LEXER_ENTER / UNMATCHED / EXIT)
+     * @param int          $pos     Byte offset in source
+     * @param Doku_Handler $handler Parser handler
+     * @return array|false Parsed data or empty array
      */
     public function handle($match, $state, $pos, Doku_Handler $handler)
     {
@@ -65,7 +76,7 @@ class syntax_plugin_color extends DokuWiki_Syntax_Plugin
                 // The spec can use either `/` or `:` as the fg/bg separator.
                 // Colon is required when a color value itself contains a slash
                 // (e.g. `rgb(.../alpha)`-style modern CSS).
-                if (strpbrk($str, ':') === false) {
+                if (!str_contains($str, ':')) {
                     $m = explode('/', $str);
                 } else {
                     $m = explode(':', $str);
@@ -85,9 +96,14 @@ class syntax_plugin_color extends DokuWiki_Syntax_Plugin
     }
 
     /**
-     * Create output
+     * Render the parsed data to output.
+     *
+     * @param string        $mode     Output mode ('xhtml', 'odt', 'metadata', …)
+     * @param Doku_Renderer $renderer The active renderer
+     * @param array         $data     Data returned by handle()
+     * @return bool True if mode was handled
      */
-    public function render($mode, Doku_Renderer $renderer, $data)
+    public function render($mode, Doku_Renderer $renderer, $data): bool
     {
         if ($mode === 'xhtml') {
             [$state, $match] = $data;
@@ -101,7 +117,7 @@ class syntax_plugin_color extends DokuWiki_Syntax_Plugin
                     break;
 
                 case DOKU_LEXER_UNMATCHED:
-                    $renderer->doc .= $renderer->_xmlEntities($match);
+                    $renderer->doc .= hsc($match);
                     break;
 
                 case DOKU_LEXER_EXIT:
@@ -147,9 +163,13 @@ class syntax_plugin_color extends DokuWiki_Syntax_Plugin
 
     /**
      * Build a single CSS `property: value;` pair, or empty string if the value
-     * is empty / contains disallowed characters.
+     * is empty or contains disallowed characters.
+     *
+     * @param string      $attrib CSS property name ('color' or 'background-color')
+     * @param string|null $c      Raw color spec from wiki markup
+     * @return string CSS declaration or empty string
      */
-    protected function specToCSS($attrib, $c)
+    protected function specToCSS(string $attrib, ?string $c): string
     {
         $c = trim((string)$c);
         if ($c === '' || !$this->isValidSpec($c)) {
@@ -159,12 +179,14 @@ class syntax_plugin_color extends DokuWiki_Syntax_Plugin
     }
 
     /**
-     * Lightweight validation: just reject characters that could break out of
-     * the style attribute (quotes, tag brackets, ampersand, semicolon). Leave
-     * the actual color-spec validity to the browser — keeps the plugin working
-     * with CSS 4 / future color syntaxes.
+     * Reject characters that could break out of a single-quoted style attribute
+     * or inject additional CSS properties. Leaves color-spec validity to the browser
+     * so the plugin stays forward-compatible with new CSS color syntaxes.
+     *
+     * @param string $c Color spec to validate
+     * @return bool True if safe to use inside a style attribute
      */
-    protected function isValidSpec($c)
+    protected function isValidSpec(string $c): bool
     {
         return strpbrk($c, '"\'<>&;') === false;
     }

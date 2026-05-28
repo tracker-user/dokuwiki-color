@@ -26,6 +26,10 @@ Original plugin: [github.com/hanche/dokuwiki_color_plugin](https://github.com/ha
 | Standardised on `[]` short array syntax | Consistency. PHP 7+ feature, has been required everywhere we run for years. |
 | `script.js` wrapped in an IIFE with `'use strict'`; uses `toolbar.push()` instead of `toolbar[toolbar.length] = ...` | Stops leaking the `color_icobase` variable to global scope. Matches modern JS conventions. Same behavior — 13 swatch picker still appears in the toolbar. |
 | `plugin.info.txt` `date` set to `2077-10-19` | Suppresses the **Update** button in the Extension Manager. Original day/month preserved, year bumped. See "Update suppression" below. |
+| Extended `\dokuwiki\Extension\SyntaxPlugin` instead of legacy `DokuWiki_Syntax_Plugin` alias | Matches Librarian namespace conventions. Behavioral equivalent — the alias simply resolves to the same class. |
+| `hsc()` instead of `$renderer->_xmlEntities()` for unmatched text | `_xmlEntities()` is a thin wrapper around `hsc()`. Using the global function directly avoids depending on an underscore-prefixed legacy method. |
+| `str_contains()` instead of `strpbrk()` for the `:` separator check | PHP 8.0+ idiom; communicates intent more clearly for a single-character search. |
+| Return types and `@param`/`@return` docblocks on all public/protected methods | PHP 8.3 compatibility and explicit API contract. |
 
 No changes to `images/`, no changes to the on-disk filename layout, no changes to the wiki syntax. Existing pages render identically.
 

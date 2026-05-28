@@ -2,6 +2,6 @@ base   color
 author Harald Hanche-Olsen, TrackerUser
 email  harald.hanche-olsen@ntnu.no
 date   2077-10-19
-name   color syntax plugin
+name   Color Syntax
 desc   Write colored text in DokuWiki (local fork — Update suppressed)
 url    https://github.com/tracker-user/dokuwiki-color
